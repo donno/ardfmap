@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>ardfmap</title>
+  <meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style/leaflet.css" />
+  <link rel="stylesheet" href="style/leaflet.draw.css" />
+  <!--[if lte IE 8]>
+    <link rel="stylesheet" href="style/leaflet.ie.css" />
+    <link rel="stylesheet" href="style/leaflet.draw.ie.css" />
+  <![endif]-->
+  <style>
+    html, body { padding: 0px; margin: 0px; }
+    #map { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+  .leaflet-control-login-interior {
+    background-position: 50% 50%;
+    background-repeat: no-repeat;
+    display: block;
+    padding: 3px;
+    border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    box-shadow: 0 1px 7px rgba(0, 0, 0, 0.65);
+    cursor: auto;
+    text-align: center;
+    background-color: #FFFFFF;
+  }
+  </style>
+</head>
+<body>
+  <!-- TODO: Add a bar across the top with a logo, some links and a login box-->
+  <div id="map"></div>
+
+  <script src="js/leaflet.js"></script>
+  <script src="js/leaflet.draw.js"></script>
+  <script src="js/leaflet.google.js"></script>
+  <script src="js/ardfmap.login.js"></script>
+
+  <script src="http://maps.google.com/maps/api/js?v=3.2&sensor=false"></script>
+
+  <script>
+    L.Icon.Default.imagePath = 'style/images';
+    var map = L.map('map').setView([-34.966667, 138.7], 13);
+
+    var osm = new L.TileLayer('http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+    var simpleRoads = new L.TileLayer(
+      'http://{s}.tiles.mapbox.com/v3/examples.map-szwdot65/{z}/{x}/{y}.png');
+    var bluemarble = new L.TileLayer(
+      'http://s3.amazonaws.com/com.modestmaps.bluemarble/{z}-r{y}-c{x}.jpg',
+      {minZoom: 0, maxZoom: 9});
+    var mapQuestOsm = new L.TileLayer(
+      'http://otile1.mqcdn.com/tiles/1.0.0/osm/{z}/{x}/{y}.png');
+
+    var lofty = new L.TileLayer(
+      '<url>',
+      {minZoom: 9, maxZoom: 15, tms: true});
+
+    var layers = {
+      "Google road": new L.Google('ROADMAP'),
+      "Google satellite": new L.Google('SATELLITE'),
+      "Google hybrid": new L.Google('HYBRID'),
+      //'Lofty': lofty,
+      'OSM': osm,
+      'MapQuest OSM': mapQuestOsm,
+      'Simple roads': simpleRoads,
+      'Blue marble': bluemarble
+      };
+    map.addLayer(layers["Google road"]);
+
+    function onEachFeature(feature, layer) {
+      if (feature.properties && feature.properties.popupContent) {
+        layer.bindPopup(feature.properties.popupContent);
+      }
+    }
+
+    function pointToCircle(feature, latlng) {
+      if (feature.properties.radius) {
+        var options =
+          feature.properties.options ? feature.properties.options : {};
+        return L.circle(latlng, feature.properties.radius, options);
+      } else {
+        return L.marker(latlng, {});
+      }
+    }
+
+    var drawnItems = new L.FeatureGroup();
+    var userLayer = L.geoJson(null, {
+      onEachFeature: onEachFeature,
+      pointToLayer: pointToCircle
+      }).addTo(map);
+    var overlays = {
+      "New content": drawnItems,
+      "User content": userLayer,
+      };
+
+    drawnItems.addTo(map);
+    userLayer.addTo(map);
+
+    // Create user interface.
+    map.addControl(new L.Control.Login({}));
+    map.addControl(new L.Control.Layers(layers, overlays));
+    map.addControl(new L.Control.Draw({edit: { featureGroup: userLayer }}));
+
+    var foo = {};
+    map.on('draw:created', function (e) {
+        var type = e.layerType, layer = e.layer;
+        var geoData = layer.toGeoJSON();
+
+        if (type === 'marker') {
+          layer.bindPopup('A popup!');
+        } else if (type === 'circle') {
+          // GeoJSON doesn't have native support, so we encode a circle as a
+          // "point" with a "radius" property.
+          geoData.properties.radius = layer.getRadius();
+          geoData.properties.options = layer.options;
+        }
+
+        // TODO: Send the information back to the server.
+        // The following is WIP
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/api/geometry', true);
+        xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+        xhr.send(JSON.stringify(geoData));
+        xhr.onloadend = function () {
+          // TODO: Add a status bar to the UI and show this message.
+          //console.log('Geometry saved');
+        };
+
+        drawnItems.addLayer(layer);
+    });
+
+    map.on('draw:deleted', function (e) {
+      var layers = e.layers.getLayers();
+      for (var i in layers)
+      {
+        var feature = layers[i].feature;
+        if (feature && feature.properties.serverID)
+        {
+          var serverId = feature.properties.serverID;
+          (function(serverId) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('DELETE', '/api/geometry/' + serverId, true);
+            xhr.send();
+            xhr.onloadend = function () {
+              // TODO: Add a status bar to the UI and show this message.
+              alert("Object #" + serverId + " has been deleted.");
+            };
+          })(serverId);
+        }
+      }
+    });
+
+    var refreshInterval = null;
+    function fetchUserCreatedContent(lastTime)
+    {
+      // Collects existing geoJSON information that was created by end users.
+      // These are mainly annoations and areas of intrest followed by car paths.
+      var xhr = new XMLHttpRequest();
+      var geometryUri = '/api/geometry';
+      if (lastTime) geometryUri += '?lastTime=' + lastTime;
+
+      xhr.open('GET', geometryUri, true);
+      xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
+      xhr.onreadystatechange = function() {
+        if (xhr.readyState == 4) {
+          var contents = JSON.parse(xhr.responseText);
+          var lastEditTime = contents['lastEditTime'];
+          var geometry = contents['geometry'];
+          for (var i in geometry) {
+            userLayer.addData(geometry[i]);
+          }
+
+          if (refreshInterval) { clearInterval(refreshInterval); }
+          refreshInterval = setInterval(
+            function(){fetchUserCreatedContent(lastEditTime)}, 5000);
+        }
+      }
+      xhr.send();
+    }
+
+
+  fetchUserCreatedContent(null);
+
+  </script>
+
+</body>
+</html>
