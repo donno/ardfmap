@@ -166,6 +166,16 @@ class DatabaseSqlite(Database):
     self._connection.commit()
     return databaseId
 
+  def updateGeometry(self, databaseId, geoJson):
+    """Updates the geometry to the corresponding ID in the database with
+    geoJson."""
+    c = self._connection.cursor()
+
+    # TODO: Add the date it was created and who by...
+    c.execute("UPDATE geometry SET contents='%s' WHERE id=%d" %
+              (json.dumps(geoJson), databaseId))
+    self._connection.commit()
+
   def deleteGeometry(self, databaseId):
     """Deletes the geometry with the corresponding ID in the database."""
     c = self._connection.cursor()
