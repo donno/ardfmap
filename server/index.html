@@ -160,10 +160,11 @@
                 {
                   alert("Object #" + serverId + " has been deleted.");
                 }
-              } else if (xhr.status === 401) {
-                alert('You need to be logged in!');
-              } else {
-                alert("Couldn't delete object as you need to be logged in!");
+                else if (xhr.status === 401) {
+                  alert('You need to be logged in!');
+                } else {
+                  alert("Error deleting the object.");
+                }
               }
             };
           })(serverId);
