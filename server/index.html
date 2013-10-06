@@ -123,9 +123,18 @@
         xhr.open('POST', '/api/geometry', true);
         xhr.setRequestHeader('Content-Type', 'application/json; charset=UTF-8');
         xhr.send(JSON.stringify(geoData));
-        xhr.onloadend = function () {
-          // TODO: Add a status bar to the UI and show this message.
-          //console.log('Geometry saved');
+        xhr.onreadystatechange = function (onEvent) {
+         if (xhr.readyState === 4) {
+              if (xhr.status === 200) {
+                // TODO: Add a status bar to the UI and show this message.
+                //console.log('Geometry saved');
+                console.log('It worked!');
+              } else if (xhr.status === 401) {
+                alert('You need to be logged in!');
+              } else {
+                console.log("Error", xhr.statusText);
+              }
+          }
         };
 
         drawnItems.addLayer(layer);
@@ -143,9 +152,19 @@
             var xhr = new XMLHttpRequest();
             xhr.open('DELETE', '/api/geometry/' + serverId, true);
             xhr.send();
-            xhr.onloadend = function () {
+            xhr.onreadystatechange = function (onEvent) {
               // TODO: Add a status bar to the UI and show this message.
-              alert("Object #" + serverId + " has been deleted.");
+              if (xhr.readyState === 4)
+              {
+                if (xhr.status === 200)
+                {
+                  alert("Object #" + serverId + " has been deleted.");
+                }
+              } else if (xhr.status === 401) {
+                alert('You need to be logged in!');
+              } else {
+                alert("Couldn't delete object as you need to be logged in!");
+              }
             };
           })(serverId);
         }
@@ -179,7 +198,6 @@
       }
       xhr.send();
     }
-
 
   fetchUserCreatedContent(null);
 
