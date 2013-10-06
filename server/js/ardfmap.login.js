@@ -15,13 +15,14 @@ function LoginCommand() {
   req.onload = function(ev) {
     var contents = JSON.parse(req.responseText);
     if (req.readyState == 4) {
-      if (req.status == 401) {
-        alert(contents['error']);
+      if (req.status == 401 || req.status == 400) {
+        alert(contents.error.message);
         document.getElementById('password').focus();
-      }
-      else
-      {
-
+      } else if (req.status === 200) {
+        document.getElementById('ardfmap-login').innerHTML =
+          'Logged in as ' + data.username;
+      } else {
+        alert('An unknown error has occurred during login.');
       }
     }
   }
@@ -36,6 +37,7 @@ L.Control.Login = L.Control.extend({
   onAdd: function (map) {
     var loginDiv = L.DomUtil.create('div', 'leaflet-control');
     var controlUI = L.DomUtil.create('div', 'leaflet-control-login-interior', loginDiv);
+    controlUI.id = "ardfmap-login";
     controlUI.title = 'Login';
 
     var username = L.DomUtil.create('input', 'username', controlUI);
