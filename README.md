@@ -7,18 +7,19 @@ A system designed for use with electronic foxhunting events and balloon chases.
 
 ## Getting started ##
 
-Start the server by double clicking the server.py (or python server.py in a
-terminal.
-
-Visit http://localhost:8083 in your web browser.
+# Install Flask (pip install flask).
+# Start the server by double clicking the server.py (or python server.py in a
+  terminal.
+# Visit http://localhost:8083 in your web browser.
 
 ## Architecture ##
 
 ### Server ###
 
-The server componintent is currently pure Python using only Python standard
-libaries, and hosts a HTTP server. IN addition to hosting the web client it
-provides access to the database via a REST-style API.
+The server component is now dependant on the "Flask" Python library which is a
+microframework for Python based on Werkzeug, Jinja 2 and good intentions.
+In addition to hosting the web client it provides access to the database via a
+REST-style API.
 
 At the moment it stores the data in a SQLite database to avoid the need of
 installing database server like Postgres.
