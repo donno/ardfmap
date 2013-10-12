@@ -31,10 +31,15 @@ class Database:
   def login(self, username, password):
     """Performs a user login.
 
-    Returns False if it fails.
+    Returns None if it fails otherwise the user ID.
     """
 
     raise NotImplementedError('A derived class should provide this method.')
+
+  def user(self, uid):
+    """Returns the username and if the account is active."""
+    raise NotImplementedError('A derived class should provide this method.')
+
 
 class DatabaseSqlite(Database):
   """A database suitable for small deployment, development and testing."""
@@ -93,6 +98,15 @@ class DatabaseSqlite(Database):
       return True
     else:
       return False
+  def user(self, uid):
+    """Returns the username and if the account is active."""
+    c = self._connection.cursor()
+    query = c.execute("SELECT username FROM users WHERE id = %d" % uid)
+    row = query.fetchone()
+    if row:
+      return (row[0], True)
+    else:
+      return (None, False)
 
   def getGeometry(self, lastTime=None, geometryId=None):
     """Returns the geometry as geoJSON that is stored in the database.
