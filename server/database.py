@@ -92,12 +92,11 @@ class DatabaseSqlite(Database):
     row = query.fetchone()
 
     if row:
-      # print the username
       userId = row[0]
-      # Insert it into the session table and return the session id.
-      return True
+      return int(userId)
     else:
-      return False
+      return None
+
   def user(self, uid):
     """Returns the username and if the account is active."""
     c = self._connection.cursor()
