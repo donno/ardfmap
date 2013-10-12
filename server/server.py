@@ -28,7 +28,7 @@ def geometryList():
 def geometryCreate():
     """Creates new geometry in the database."""
     geoJson = flask.request.get_json()
-    databaseId = db.addGeometry(geoJson)
+    databaseId = db.addGeometry(geoJson, 'NYI')
     return flask.json.jsonify({
         "message": "New geometry saved.",
         "databaseId": databaseId,

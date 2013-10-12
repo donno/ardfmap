@@ -12,7 +12,7 @@ def readIsoDate(dateString):
 
 class Database:
 
-  def addGeometry(self, geoJson):
+  def addGeometry(self, geoJson, username):
     """Adds the geometry as specified by the geoJSON to the database.
 
     Returns the ID of the newly added geometry.
@@ -163,16 +163,15 @@ class DatabaseSqlite(Database):
       'geometry': geometry,
       }
 
-  def addGeometry(self, geoJson):
+  def addGeometry(self, geoJson, username):
     """Adds the geometry as specified by the geoJSON to the database.
 
     Returns the ID of the newly added geometry.
     """
     c = self._connection.cursor()
 
-    # TODO: Add the date it was created and who by...
-    c.execute("INSERT INTO geometry(who, contents) VALUES ('NYI', '%s')" %
-              json.dumps(geoJson))
+    c.execute("INSERT INTO geometry(who, contents) VALUES ('%s', '%s')" %
+              (username, json.dumps(geoJson)))
 
     q = c.execute("SELECT last_insert_rowid()")
     databaseId = next(q)[0]
