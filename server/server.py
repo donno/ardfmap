@@ -35,27 +35,26 @@ def geometryCreate():
         })
 
 
-@app.route('/api/geometry/<geoid>', methods=['GET'])
+@app.route('/api/geometry/<int:geoId>', methods=['GET'])
 def geometry(geoid):
-    geometry = db.getGeometry(geometryId=int(geoid))['geometry'][0]
+    geometry = db.getGeometry(geometryId=geoId)['geometry'][0]
     return flask.json.jsonify(geometry)
 
 
-@app.route('/api/geometry/<geoid>', methods=['PUT'])
-def geometryEdit(geoid):
-    geometryId = int(geoid)
+@app.route('/api/geometry/<int:geoId>', methods=['PUT'])
+def geometryEdit(geoId):
     geoJson = flask.request.get_json()
-    db.updateGeometry(geometryId, geoJson)
+    db.updateGeometry(geoId, geoJson)
     return flask.json.jsonify({
         "message": "Updated geometry %d." % geometryId,
         "databaseId": geometryId,
         })
 
 
-@app.route('/api/geometry/<geoid>', methods=['DELETE'])
-def geometryDelete(geoid):
-    db.deleteGeometry(int(geoid))
-    return flask.json.jsonify({"deleted": int(geoid)})
+@app.route('/api/geometry/<int:geoId>', methods=['DELETE'])
+def geometryDelete(geoId):
+    db.deleteGeometry(geoId)
+    return flask.json.jsonify({"deleted": geoId})
 
 
 if __name__ == '__main__':
